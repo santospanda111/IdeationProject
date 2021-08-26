@@ -1,11 +1,11 @@
 from rest_framework.views import APIView,Response,status
-from django.contrib.auth.models import User
+from .models import UserData
 from .serializer import UserSerializer
 from rest_framework.exceptions import ValidationError,AuthenticationFailed
-from django.contrib.auth import authenticate
 from django.core.mail import EmailMultiAlternatives
 from UserAuth.utils import encode_token,decode_token,encode_token_userid
 from django.db.models import Q
+from django.contrib.auth.hashers import make_password,check_password
 
 class Index(APIView):
 
@@ -26,11 +26,11 @@ class Register(APIView):
         """
         id = pk
         if id is not None:
-            user = User.objects.get(id=id)
+            user = UserData.objects.get(id=id)
             serializer = UserSerializer(user)
             return Response(serializer.data)
 
-        user = User.objects.all()
+        user = UserData.objects.all()
         serializer = UserSerializer(user, many=True)
         return Response(serializer.data)
 
@@ -44,14 +44,14 @@ class Register(APIView):
         try:
             serializer = UserSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            if User.objects.filter(username=serializer.data.get('username')).exists():
+            if UserData.objects.filter(username=serializer.data.get('username')).exists():
                 return Response({'message': 'Username is already registered with another user.'}, status=status.HTTP_400_BAD_REQUEST)
             # Register user
-            user = User.objects.create_user(first_name=serializer.data.get('first_name'), last_name=serializer.data.get('last_name'), email=serializer.data.get('email'), username=serializer.data.get('username'), password=serializer.data.get('password'))
+            user = UserData(first_name=serializer.data.get('first_name'), last_name=serializer.data.get('last_name'), email=serializer.data.get('email'), username=serializer.data.get('username'), password=make_password(serializer.data.get('password')))
             # Save user
             user.save()
             user_name=serializer.data.get('username')
-            user_id= User.objects.get(username=user_name).id
+            user_id= UserData.objects.get(username=user_name).id
             print(user_id)
             token = encode_token(user_id,user_name)
             email= serializer.data.get("email")
@@ -79,14 +79,14 @@ class LogIn(APIView):
             :return: It returns the message if successfully loggedin.
         """
         try:
-            username = request.data['username']
-            password = request.data['password']
-            user = authenticate(username=username, password=password)
-            id = User.objects.get(username=username).id
+            username=request.data['username']
+            user_password = UserData.objects.get(username=username).password
+            user = check_password(request.data['password'],user_password)
+            id = UserData.objects.get(username=username).id
             token=encode_token_userid(id)           
-            if user is None:
-                return Response({"msg": 'Wrong username or password'}, status=status.HTTP_400_BAD_REQUEST)
-            return Response({"msg": "Loggedin Successfully", 'data' : {'username': username,'token': token}}, status=status.HTTP_200_OK)
+            if user:
+                return Response({"msg": "Loggedin Successfully", 'data' : {'username': username,'token': token}}, status=status.HTTP_200_OK)
+            return Response({"msg": 'Wrong username or password'}, status=status.HTTP_400_BAD_REQUEST)
         except ValueError:
             return Response({"message": 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
         except ValidationError:
@@ -109,7 +109,7 @@ class VerifyEmail(APIView):
             user= decode_token(token)
             user_id=user.get("user_id")
             username=user.get("username")
-            if User.objects.filter(Q(id=user_id) & Q(username=username)):
+            if UserData.objects.filter(Q(id=user_id) & Q(username=username)):
                 return Response({"message":"Email Verified and Registered successfully"},status=status.HTTP_200_OK)
             return Response({"message":"Try Again......Wrong credentials"})
         except Exception as e:
