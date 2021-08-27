@@ -1,14 +1,18 @@
-from rest_framework.serializers import Serializer
 from rest_framework.views import APIView,Response,status
-from .serializer import BookSerializer,CartSerializer
+from .serializer import BookSerializer
 from UserAuth.models import UserData
-from .models import Books,Cart
+from .models import Books
 from .utils import verify_token
+from rest_framework.exceptions import ValidationError
 
 class AddBooks(APIView):
 
     @verify_token
     def post(self,request):
+        """
+        This method adds the book details to the database. This can only be done by admin
+        :return: adds the book details to the database
+        """
         try:
             user = UserData.objects.filter(id = request.data.get("id")).first()
             if user.status == 'admin':
@@ -19,52 +23,25 @@ class AddBooks(APIView):
                 book.save()
                 return Response({'message':'Book Created Successfully'},status=status.HTTP_200_OK)
             return Response({'message':'Sorry, Only Admin can add books.'},status=status.HTTP_200_OK)
+        except KeyError:
+            return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError:
+            return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({'message': str(e)})
+            return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class GetBooks(APIView):
 
     def get(self,request):
+        """
+        This method queries all the book details in Books database
+        :return: book details in database.
+        """
         try:
             data = Books.objects.all()
             serializer = BookSerializer(data, many=True)
             return Response({'Data':serializer.data})
+        except ValidationError:
+            return Response({'message': 'Invalid serializer'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({'message': str(e)})
-
-class AddToCart(APIView):
-    @verify_token
-    def get(self,request):
-        try:
-            user = UserData.objects.filter(id = request.data.get("id")).first()
-            totalitem = len(Cart.objects.filter(user_id=user))
-            print(totalitem)
-            cart = Cart.objects.filter(user_id=user)
-            amount = 0
-            totalamount=0
-            print(cart)
-            for item in cart:
-                print(item.book_id)
-                book = Books.objects.filter(id=item.book_id)
-                print(book)
-                tempamount = (item.quantity * book)
-                amount += tempamount
-                totalamount = amount
-                print(totalamount)
-            print(book)
-            return Response("Hello")
-        except Exception as e:
-            return Response({"message":str(e)})
-
-
-    @verify_token
-    def post(self,request):
-        try:
-            user = UserData.objects.filter(id = request.data.get("id")).first()
-            book_id= request.data['book_id']
-            book_title = Books.objects.get(id=book_id)
-            cart_item = Cart(user_id=user, book=book_title,quantity=request.data['quantity'])
-            cart_item.save()
-            return Response({'message':'Added to cart successfully'})
-        except Exception as e:
-            return Response({'message':str(e)})
+            return Response({'message': str(e)},status=status.HTTP_400_BAD_REQUEST)
