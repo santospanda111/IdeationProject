@@ -1,7 +1,7 @@
 from rest_framework.views import APIView,Response,status
-from .serializer import BookSerializer
+from .serializer import BookSerializer,CartSerializer
 from UserAuth.models import UserData
-from .models import Books
+from .models import Books,Cart
 from .utils import verify_token
 from rest_framework.exceptions import ValidationError
 
@@ -45,3 +45,57 @@ class GetBooks(APIView):
             return Response({'message': 'Invalid serializer'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'message': str(e)},status=status.HTTP_400_BAD_REQUEST)
+
+class AddToCart(APIView):
+    
+    @verify_token
+    def get(self,request):
+        """
+        This method requires user_id to get cart information with total amount.
+        :param user_id: payload in the jwt.
+        :return: items in cart with total amount.
+        """
+        try:
+            user = UserData.objects.filter(id = request.data.get("id")).first()
+            data = Cart.objects.filter(user_id=user)
+            serializer = CartSerializer(data, many=True)
+            amount = 0
+            totalamount=0
+            for item in data:
+                book = Books.objects.filter(id=item.book_id).first()
+                tempamount = (item.quantity * book.price)
+                amount += tempamount
+                totalamount = amount
+            return Response({"data":serializer.data,"total_amount":totalamount})
+        except ValueError:
+            return Response({"message": 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
+        except KeyError:
+            return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError:
+            return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"message":str(e)},status=status.HTTP_400_BAD_REQUEST)
+
+
+    @verify_token
+    def post(self,request):
+        """
+        This method requires book id to add to the cart one by one contains book id, quantity
+        :param user_id: payload in the jwt, book_id, quantity
+        :return: response whether items added to cart or not.
+        """
+        try:
+            user = UserData.objects.filter(id = request.data.get("id")).first()
+            book_id= request.data['book_id']
+            book_title = Books.objects.get(id=book_id)
+            cart_item = Cart(user_id=user, book=book_title,quantity=request.data['quantity'])
+            cart_item.save()
+            return Response({'message':'Added to cart successfully'})
+        except ValueError:
+            return Response({"message": 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
+        except KeyError:
+            return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError:
+            return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'message':str(e)},status=status.HTTP_400_BAD_REQUEST)

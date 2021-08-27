@@ -10,7 +10,7 @@ class BookSerializer(serializers.ModelSerializer):
 class CartSerializer(serializers.ModelSerializer):
  class Meta:
   model = Cart
-  fields = ['book_id','quantity','price','total_amount']
+  fields = ['user_id','book_id','quantity']
 
 class OrderSerializer(serializers.ModelSerializer):
  class Meta:
