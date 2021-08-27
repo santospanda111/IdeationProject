@@ -4,6 +4,7 @@ from UserAuth.models import UserData
 from .models import Books,Cart
 from .utils import verify_token
 from rest_framework.exceptions import ValidationError
+from django.db.models import Q
 
 class AddBooks(APIView):
 
@@ -99,3 +100,24 @@ class AddToCart(APIView):
             return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'message':str(e)},status=status.HTTP_400_BAD_REQUEST)
+
+class SearchBook(APIView):
+
+    def get(self, request):
+        """
+        This method requires data to search book from book store.
+        :param : title or author or id
+        :return: book data according to the title or author or id.
+        """
+        try:
+            book = Books.objects.filter(Q(title=request.data['keyword']) | Q(author=request.data['keyword']) | Q(id=request.data['keyword'])).all()
+            serializer = BookSerializer(book, many=True)
+            return Response({"data": serializer.data})
+        except ValueError:
+            return Response({"message": 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
+        except KeyError:
+            return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError:
+            return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"message":str(e)},status=status.HTTP_400_BAD_REQUEST)
