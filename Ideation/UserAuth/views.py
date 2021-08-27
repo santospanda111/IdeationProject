@@ -47,12 +47,11 @@ class Register(APIView):
             if UserData.objects.filter(username=serializer.data.get('username')).exists():
                 return Response({'message': 'Username is already registered with another user.'}, status=status.HTTP_400_BAD_REQUEST)
             # Register user
-            user = UserData(first_name=serializer.data.get('first_name'), last_name=serializer.data.get('last_name'), email=serializer.data.get('email'), username=serializer.data.get('username'), password=make_password(serializer.data.get('password')))
+            user = UserData(first_name=serializer.data.get('first_name'), last_name=serializer.data.get('last_name'), email=serializer.data.get('email'), username=serializer.data.get('username'), password=make_password(serializer.data.get('password')), status=serializer.data.get('status'))
             # Save user
             user.save()
             user_name=serializer.data.get('username')
             user_id= UserData.objects.get(username=user_name).id
-            print(user_id)
             token = encode_token(user_id,user_name)
             email= serializer.data.get("email")
             subject, from_email, to='Register yourself by complete this verification','santospanda111@gmail.com',email

@@ -11,3 +11,4 @@ class UserData(models.Model):
     email = models.EmailField()
     username = models.CharField(max_length=255,unique=True)
     password = models.CharField(max_length=255)
+    status = models.CharField(max_length=100,null=True)
