@@ -31,6 +31,13 @@ class Order(models.Model):
     is_delivered = models.BooleanField(default=False,null=False)
     ordered_date = models.DateTimeField(auto_now_add=True)
 
+class OrderList(models.Model):
+    """
+     OrderList Model : user_id, book
+    """
+    user_id = models.ForeignKey(UserData, on_delete=models.CASCADE)
+    book_id = models.ForeignKey(Books, on_delete=models.CASCADE)
+    
 class WishList(models.Model):
     """
      WishList Model : id, user_id, book_id
