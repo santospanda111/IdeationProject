@@ -7,6 +7,10 @@ from rest_framework.exceptions import ValidationError
 from django.db.models import Q
 from django.conf import settings
 from django.core.mail import send_mail
+from log import get_logger
+
+# Logger configuration
+logger = get_logger()
 
 class AddBooks(APIView):
 
@@ -26,11 +30,14 @@ class AddBooks(APIView):
                 book.save()
                 return Response({'message':'Book Created Successfully'},status=status.HTTP_200_OK)
             return Response({'message':'Sorry, Only Admin can add books.'},status=status.HTTP_200_OK)
-        except KeyError:
+        except KeyError as e:
+            logger.exception(e)
             return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
-        except ValidationError:
+        except ValidationError as e:
+            logger.exception(e)
             return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            logger.exception(e)
             return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class GetBooks(APIView):
@@ -43,10 +50,12 @@ class GetBooks(APIView):
         try:
             data = Books.objects.all()
             serializer = BookSerializer(data, many=True)
-            return Response({'Data':serializer.data})
-        except ValidationError:
+            return Response({'Data':serializer.data},status=status.HTTP_200_OK)
+        except ValidationError as e:
+            logger.exception(e)
             return Response({'message': 'Invalid serializer'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            logger.exception(e)
             return Response({'message': str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 class AddToCart(APIView):
@@ -69,14 +78,18 @@ class AddToCart(APIView):
                 tempamount = (item.quantity * book.price)
                 amount += tempamount
                 totalamount = amount
-            return Response({"data":serializer.data,"total_amount":totalamount})
-        except ValueError:
+            return Response({"data":serializer.data,"total_amount":totalamount},status= status.HTTP_200_OK)
+        except ValueError as e:
+            logger.exception(e)
             return Response({"message": 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
-        except KeyError:
+        except KeyError as e:
+            logger.exception(e)
             return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
-        except ValidationError:
+        except ValidationError as e:
+            logger.exception(e)
             return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            logger.exception(e)
             return Response({"message":str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -96,14 +109,18 @@ class AddToCart(APIView):
                 book.save()
                 cart_item = Cart(user_id=user, book=book,quantity=request.data['quantity'])
                 cart_item.save()
-                return Response({'message':'Added to cart successfully'})
-        except ValueError:
+                return Response({'message':'Added to cart successfully'}, status=status.HTTP_200_OK)
+        except ValueError as e:
+            logger.exception(e)
             return Response({"message": 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
-        except KeyError:
+        except KeyError as e:
+            logger.exception(e)
             return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
-        except ValidationError:
+        except ValidationError as e:
+            logger.exception(e)
             return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            logger.exception(e)
             return Response({'message':str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 class SearchBook(APIView):
@@ -117,14 +134,18 @@ class SearchBook(APIView):
         try:
             book = Books.objects.filter(Q(title=request.data['keyword']) | Q(author=request.data['keyword']) | Q(id=request.data['keyword'])).all()
             serializer = BookSerializer(book, many=True)
-            return Response({"data": serializer.data})
-        except ValueError:
+            return Response({"data": serializer.data}, status= status.HTTP_200_OK)
+        except ValueError as e:
+            logger.exception(e)
             return Response({"message": 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
-        except KeyError:
+        except KeyError as e:
+            logger.exception(e)
             return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
-        except ValidationError:
+        except ValidationError as e:
+            logger.exception(e)
             return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            logger.exception(e)
             return Response({"message":str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 class OrderPlace(APIView):
@@ -140,8 +161,9 @@ class OrderPlace(APIView):
             user = UserData.objects.filter(id = request.data.get("id")).first()
             orders= OrderList.objects.filter(user_id=user)
             serializer = OrderListSerializer(orders, many=True)
-            return Response({"Order_List":serializer.data})
+            return Response({"Order_List":serializer.data},status= status.HTTP_200_OK)
         except Exception as e:
+            logger.exception(e)
             return Response({"message":str(e)},status=status.HTTP_400_BAD_REQUEST)
 
     @verify_token
@@ -180,12 +202,16 @@ class OrderPlace(APIView):
             email_from = settings.EMAIL_HOST_USER
             recipient_list = [user.email, ]
             send_mail( subject, message, email_from, recipient_list )
-            return Response({"message":"Order Placed Successfully","order_id":order.id,"total_amount":totalamount,"data":cart_serializer.data})
-        except ValueError:
+            return Response({"message":"Order Placed Successfully","order_id":order.id,"total_amount":totalamount,"data":cart_serializer.data}, status= status.HTTP_200_OK)
+        except ValueError as e:
+            logger.exception(e)
             return Response({"message": 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
-        except KeyError:
+        except KeyError as e:
+            logger.exception(e)
             return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
-        except ValidationError:
+        except ValidationError as e:
+            logger.exception(e)
             return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            logger.exception(e)
             return Response({"message":"Order Unsuccessful"},status=status.HTTP_400_BAD_REQUEST)
