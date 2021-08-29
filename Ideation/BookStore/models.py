@@ -49,6 +49,7 @@ class OrderList(models.Model):
      OrderList Model : user_id, book
     """
     try:
+        order_id = models.ForeignKey(Order,models.CASCADE)
         user_id = models.ForeignKey(UserData, on_delete=models.CASCADE)
         book_id = models.ForeignKey(Books, on_delete=models.CASCADE)
     except Exception as e:

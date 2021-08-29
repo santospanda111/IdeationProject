@@ -69,16 +69,18 @@ class AddToCart(APIView):
         """
         try:
             user = UserData.objects.filter(id = request.data.get("id")).first()
-            data = Cart.objects.filter(user_id=user)
-            serializer = CartSerializer(data, many=True)
+            cart_data = Cart.objects.filter(user_id=user)
+            book_data=[]
             amount = 0
             totalamount=0
-            for item in data:
+            for item in cart_data:
                 book = Books.objects.filter(id=item.book_id).first()
+                book_serializer =  BookSerializer(book)
+                book_data.append(book_serializer.data)
                 tempamount = (item.quantity * book.price)
                 amount += tempamount
                 totalamount = amount
-            return Response({"data":serializer.data,"total_amount":totalamount},status= status.HTTP_200_OK)
+            return Response({"cart":book_data,"total_amount":totalamount},status= status.HTTP_200_OK)
         except ValueError as e:
             logger.exception(e)
             return Response({"message": 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
@@ -132,18 +134,18 @@ class SearchBook(APIView):
         :return: book data according to the title or author or id.
         """
         try:
-            book = Books.objects.filter(Q(title=request.data['keyword']) | Q(author=request.data['keyword']) | Q(id=request.data['keyword'])).all()
+            book = Books.objects.filter(string__icontains=request.data['keyword']).all()
             serializer = BookSerializer(book, many=True)
             return Response({"data": serializer.data}, status= status.HTTP_200_OK)
         except ValueError as e:
             logger.exception(e)
-            return Response({"message": 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message1": 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
         except KeyError as e:
             logger.exception(e)
-            return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message2': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
         except ValidationError as e:
             logger.exception(e)
-            return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message3': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logger.exception(e)
             return Response({"message":str(e)},status=status.HTTP_400_BAD_REQUEST)
@@ -159,9 +161,17 @@ class OrderPlace(APIView):
         """
         try:
             user = UserData.objects.filter(id = request.data.get("id")).first()
+            orders= OrderList.objects.filter(user_id=user).all()
+            order_data = []
+            for items in orders:
+                item_id = items.book_id.id
+                book_data = Books.objects.filter(id=item_id).first()
+                book_serializer= BookSerializer(book_data)
+                print(book_serializer.data)
+                order_data.append(book_serializer.data)
             orders= OrderList.objects.filter(user_id=user)
-            serializer = OrderListSerializer(orders, many=True)
-            return Response({"Order_List":serializer.data},status= status.HTTP_200_OK)
+            order_serializer = OrderListSerializer(orders, many=True)
+            return Response({"Ordered_Data":order_serializer.data,"books":order_data},status= status.HTTP_200_OK)
         except Exception as e:
             logger.exception(e)
             return Response({"message":str(e)},status=status.HTTP_400_BAD_REQUEST)
@@ -185,7 +195,7 @@ class OrderPlace(APIView):
                 tempamount = (item.quantity * book.price)
                 amount += tempamount
                 totalamount = amount
-                order_list = OrderList(user_id=user, book=book)
+                order_list = OrderList(user_id=user, book_id=book)
                 order_list.save()
                 item.delete()
             order = Order(user_id=user,total_amount=totalamount)
@@ -214,4 +224,4 @@ class OrderPlace(APIView):
             return Response({'message': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logger.exception(e)
-            return Response({"message":"Order Unsuccessful"},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message":str(e)},status=status.HTTP_400_BAD_REQUEST)
