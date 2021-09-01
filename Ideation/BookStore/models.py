@@ -44,23 +44,23 @@ class Order(models.Model):
     except Exception as e:
         logger.exception(e)
 
-class OrderList(models.Model):
-    """
-     OrderList Model : user_id, book
-    """
-    try:
-        order_id = models.ForeignKey(Order,models.CASCADE)
-        user_id = models.ForeignKey(UserData, on_delete=models.CASCADE)
-        book_id = models.ForeignKey(Books, on_delete=models.CASCADE)
-    except Exception as e:
-        logger.exception(e)
-
 class WishList(models.Model):
     """
      WishList Model : id, user_id, book_id
     """
     try:
         id = models.AutoField(primary_key=True)
+        user_id = models.ForeignKey(UserData, on_delete=models.CASCADE)
+        book_id = models.ForeignKey(Books, on_delete=models.CASCADE)
+    except Exception as e:
+        logger.exception(e)
+
+class OrderItems(models.Model):
+    """
+     OrderList Model : user_id, book
+    """
+    try:
+        order_id = models.ForeignKey(Order,models.CASCADE)
         user_id = models.ForeignKey(UserData, on_delete=models.CASCADE)
         book_id = models.ForeignKey(Books, on_delete=models.CASCADE)
     except Exception as e:

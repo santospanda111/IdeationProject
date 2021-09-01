@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Books,Order,Cart, OrderList,WishList
+from .models import Books,Order,Cart, OrderItems,WishList
 
 '''This will serialize the complex data'''
 class BookSerializer(serializers.ModelSerializer):
@@ -24,5 +24,5 @@ class WishListSerializer(serializers.ModelSerializer):
 
 class OrderListSerializer(serializers.ModelSerializer):
  class Meta:
-  model = OrderList
+  model = OrderItems
   fields = "__all__"
