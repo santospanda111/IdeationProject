@@ -17,23 +17,6 @@ class Index(APIView):
         return Response({'message':'Welcome to Ideation Project'})
 
 class Register(APIView):
-    
-    def get(self,request,pk=None):
-        """
-            This method is used to read the data from user_data.
-            :param request: It accepts pk(primary_key) as parameter.
-            :return: It returns the registered data.
-        """
-        id = pk
-        if id is not None:
-            user = UserData.objects.get(id=id)
-            serializer = UserSerializer(user)
-            return Response(serializer.data)
-
-        user = UserData.objects.all()
-        serializer = UserSerializer(user, many=True)
-        return Response(serializer.data)
-
 
     def post(self,request):
         """
