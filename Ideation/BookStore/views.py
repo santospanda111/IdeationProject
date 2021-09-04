@@ -8,11 +8,27 @@ from django.db.models import Q
 from django.conf import settings
 from django.core.mail import send_mail
 from log import get_logger
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 # Logger configuration
 logger = get_logger()
 
 class AddBooks(APIView):
+
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('HTTP_TOKEN', openapi.IN_HEADER, "token to get user_id", type=openapi.TYPE_STRING)],
+        request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'author': openapi.Schema(type=openapi.TYPE_STRING, description="author"),
+            'title': openapi.Schema(type=openapi.TYPE_STRING, description="title"),
+            'image': openapi.Schema(type=openapi.TYPE_STRING, description="image"),
+            'quantity': openapi.Schema(type=openapi.TYPE_STRING, description="quantity"),
+            'price': openapi.Schema(type=openapi.TYPE_STRING, description="price"),
+            'description': openapi.Schema(type=openapi.TYPE_STRING, description="description")
+        }
+    ))
 
     @verify_token
     def post(self,request):
@@ -59,7 +75,9 @@ class GetBooks(APIView):
             return Response({'message': str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 class AddToCart(APIView):
-    
+
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('HTTP_TOKEN', openapi.IN_HEADER, "token to get user_id", type=openapi.TYPE_STRING)])
     @verify_token
     def get(self,request):
         """
@@ -95,6 +113,16 @@ class AddToCart(APIView):
             return Response({"message":str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('HTTP_TOKEN', openapi.IN_HEADER, "token to get user_id", type=openapi.TYPE_STRING)],
+        request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'book_id': openapi.Schema(type=openapi.TYPE_STRING, description="book_id"),
+            'quantity': openapi.Schema(type=openapi.TYPE_STRING, description="quantity"),
+        }
+    ))
+
     @verify_token
     def post(self,request):
         """
@@ -127,6 +155,12 @@ class AddToCart(APIView):
 
 class SearchBook(APIView):
 
+    @swagger_auto_schema(request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'keyword': openapi.Schema(type=openapi.TYPE_STRING, description="keyword")
+        }
+    ))
     def get(self, request):
         """
         This method requires data to search book from book store.
@@ -151,7 +185,10 @@ class SearchBook(APIView):
             return Response({"message":str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 class OrderPlace(APIView):
-    
+
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('HTTP_TOKEN', openapi.IN_HEADER, "token to get user_id", type=openapi.TYPE_STRING)])
+
     @verify_token
     def get(self, request):
         """
@@ -174,6 +211,9 @@ class OrderPlace(APIView):
         except Exception as e:
             logger.exception(e)
             return Response({"message":str(e)},status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('HTTP_TOKEN', openapi.IN_HEADER, "token to get user_id", type=openapi.TYPE_STRING)])
 
     @verify_token
     def post(self,request):
@@ -211,7 +251,7 @@ class OrderPlace(APIView):
             email_from = settings.EMAIL_HOST_USER
             recipient_list = [user.email, ]
             send_mail( subject, message, email_from, recipient_list )
-            return Response({"message":"Order Placed Successfully","order_id":order.id,"total_amount":totalamount,"data":cart_serializer.data}, status= status.HTTP_200_OK)
+            return Response({"message":"Order Placed Successfully","order_id":order.id,"total_amount":totalamount}, status= status.HTTP_200_OK)
         except ValueError as e:
             logger.exception(e)
             return Response({"message": 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)

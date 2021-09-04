@@ -6,6 +6,9 @@ from django.core.mail import EmailMultiAlternatives
 from UserAuth.utils import encode_token,decode_token,encode_token_userid
 from django.db.models import Q
 from django.contrib.auth.hashers import make_password,check_password
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 
 class Index(APIView):
 
@@ -18,10 +21,22 @@ class Index(APIView):
 
 class Register(APIView):
 
+    @swagger_auto_schema(request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'first_name': openapi.Schema(type=openapi.TYPE_STRING, description="first name"),
+            'last_name': openapi.Schema(type=openapi.TYPE_STRING, description="last name"),
+            'email': openapi.Schema(type=openapi.TYPE_STRING, description="email"),
+            'username': openapi.Schema(type=openapi.TYPE_STRING, description="username"),
+            'password': openapi.Schema(type=openapi.TYPE_STRING, description="password"),
+            'status': openapi.Schema(type=openapi.TYPE_STRING, description="status")
+        }
+    ))
+
     def post(self,request):
         """
             This method is used to register new user.
-            :param request: It accepts first_name, last_name, email, username and password as parameter.
+            :param request: It accepts first_name, last_name, email, username, password and status as parameter.
             :return: It returns the message if successfully registered.
         """
         try:
@@ -38,7 +53,7 @@ class Register(APIView):
             token = encode_token(user_id,user_name)
             email= serializer.data.get("email")
             subject, from_email, to='Register yourself by complete this verification','santospanda111@gmail.com',email
-            html_content= f'<a href="http://127.0.0.1:8000/verify/{token}">Click here</a>'
+            html_content= f'<a href="http://127.0.0.1:8000/user/verify/{token}">Click here</a>'
             text_content='Verify yourself'
             msg=EmailMultiAlternatives(subject,text_content,from_email,[to])
             msg.attach_alternative(html_content,"text/html")
@@ -53,6 +68,13 @@ class Register(APIView):
 
 
 class LogIn(APIView):
+    @swagger_auto_schema(request_body=openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    properties={
+        'username': openapi.Schema(type=openapi.TYPE_STRING, description="username"),
+        'password': openapi.Schema(type=openapi.TYPE_STRING, description="password")
+        }
+    ))
    
     def post(self,request):
         """
