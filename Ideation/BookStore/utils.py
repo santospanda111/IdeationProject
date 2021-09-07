@@ -1,19 +1,22 @@
-from logging import Logger
 from django.http import JsonResponse
 import jwt
 from django.conf import settings
+from log import get_logger
+
+# Logger configuration
+logger = get_logger()
 
 
 def verify_token(function):
     '''This method will verify the token'''
     def wrapper(self, request):
-        
-        if 'HTTP_TOKEN' not in request.META:
+        token = request.headers.get('Authorization') or request.META.get('HTTP_TOKEN')
+        if not token:
             resp = JsonResponse({'message': 'Token not provided in the header'})
             resp.status_code = 400
-            Logger.info('Token not provided in the header')
+            logger.info('Token not provided in the header')
             return resp
-        user_details= jwt.decode(request.META.get('HTTP_TOKEN'),key=settings.SECRET_KEY,algorithms="HS256")
+        user_details= jwt.decode(token,key=settings.SECRET_KEY,algorithms="HS256")
         user_id= user_details.get('user_id')
         request.data.update({"id":user_id})
         return function(self, request) 

@@ -68,6 +68,7 @@ class Register(APIView):
 
 
 class LogIn(APIView):
+    
     @swagger_auto_schema(request_body=openapi.Schema(
     type=openapi.TYPE_OBJECT,
     properties={

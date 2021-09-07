@@ -17,7 +17,7 @@ logger = get_logger()
 class AddBooks(APIView):
 
     @swagger_auto_schema(manual_parameters=[
-        openapi.Parameter('HTTP_TOKEN', openapi.IN_HEADER, "token to get user_id", type=openapi.TYPE_STRING)],
+        openapi.Parameter('TOKEN', openapi.IN_HEADER, "token", type=openapi.TYPE_STRING)],
         request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
         properties={
@@ -77,7 +77,7 @@ class GetBooks(APIView):
 class AddToCart(APIView):
 
     @swagger_auto_schema(manual_parameters=[
-        openapi.Parameter('HTTP_TOKEN', openapi.IN_HEADER, "token to get user_id", type=openapi.TYPE_STRING)])
+        openapi.Parameter('TOKEN', openapi.IN_HEADER, "token", type=openapi.TYPE_STRING)])
     @verify_token
     def get(self,request):
         """
@@ -114,7 +114,7 @@ class AddToCart(APIView):
 
 
     @swagger_auto_schema(manual_parameters=[
-        openapi.Parameter('HTTP_TOKEN', openapi.IN_HEADER, "token to get user_id", type=openapi.TYPE_STRING)],
+        openapi.Parameter('TOKEN', openapi.IN_HEADER, "token", type=openapi.TYPE_STRING)],
         request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
         properties={
@@ -155,12 +155,12 @@ class AddToCart(APIView):
 
 class SearchBook(APIView):
 
-    @swagger_auto_schema(request_body=openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        properties={
-            'keyword': openapi.Schema(type=openapi.TYPE_STRING, description="keyword")
-        }
-    ))
+    # @swagger_auto_schema(request_body=openapi.Schema(
+    #     type=openapi.TYPE_OBJECT,
+    #     properties={
+    #         'keyword': openapi.Schema(type=openapi.TYPE_STRING, description="keyword")
+    #     }
+    # ))
     def get(self, request):
         """
         This method requires data to search book from book store.
@@ -187,7 +187,7 @@ class SearchBook(APIView):
 class OrderPlace(APIView):
 
     @swagger_auto_schema(manual_parameters=[
-        openapi.Parameter('HTTP_TOKEN', openapi.IN_HEADER, "token to get user_id", type=openapi.TYPE_STRING)])
+        openapi.Parameter('TOKEN', openapi.IN_HEADER, "token", type=openapi.TYPE_STRING)])
 
     @verify_token
     def get(self, request):
@@ -213,7 +213,7 @@ class OrderPlace(APIView):
             return Response({"message":str(e)},status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(manual_parameters=[
-        openapi.Parameter('HTTP_TOKEN', openapi.IN_HEADER, "token to get user_id", type=openapi.TYPE_STRING)])
+        openapi.Parameter('TOKEN', openapi.IN_HEADER, "token", type=openapi.TYPE_STRING)])
 
     @verify_token
     def post(self,request):
@@ -264,3 +264,21 @@ class OrderPlace(APIView):
         except Exception as e:
             logger.exception(e)
             return Response({"message":str(e)},status=status.HTTP_400_BAD_REQUEST)
+
+class IsDelivered(APIView):
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('TOKEN', openapi.IN_HEADER, "token", type=openapi.TYPE_STRING)])
+
+
+    @verify_token
+    def put(self,request):
+    
+        try:
+            user = UserData.objects.filter(id = request.data.get("id")).first()
+            order_data = Order.objects.filter(user_id=user).all()
+            for orders in order_data:
+                orders.is_delivered=True
+                orders.save()
+            return Response('successfully delivered')
+        except Exception as e:
+            return Response({"message":str(e)})
