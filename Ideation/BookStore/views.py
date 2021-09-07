@@ -266,6 +266,10 @@ class OrderPlace(APIView):
             return Response({"message":str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 class IsDelivered(APIView):
+    """
+    This method updates the delivery status of the product ordered
+    :return:
+    """
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('TOKEN', openapi.IN_HEADER, "token", type=openapi.TYPE_STRING)])
 
@@ -279,6 +283,7 @@ class IsDelivered(APIView):
             for orders in order_data:
                 orders.is_delivered=True
                 orders.save()
-            return Response('successfully delivered')
+            return Response({'message':'successfully delivered'})
         except Exception as e:
+            logger.exception(e)
             return Response({"message":str(e)})
