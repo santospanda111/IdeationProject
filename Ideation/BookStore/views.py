@@ -167,13 +167,13 @@ class AddToCart(APIView):
 
 class SearchBook(APIView):
 
-    # @swagger_auto_schema(request_body=openapi.Schema(
-    #     type=openapi.TYPE_OBJECT,
-    #     properties={
-    #         'keyword': openapi.Schema(type=openapi.TYPE_STRING, description="keyword")
-    #     }
-    # ))
-    def get(self, request):
+    @swagger_auto_schema(request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'keyword': openapi.Schema(type=openapi.TYPE_STRING, description="keyword")
+        }
+    ))
+    def post(self, request):
         """
         This method requires data to search book from book store.
         -Here i have implemented redis to get RAM Cache.
