@@ -6,7 +6,6 @@ from log import get_logger
 # Logger configuration
 logger = get_logger()
 
-
 def verify_token(function):
     '''This method will verify the token'''
     def wrapper(self, request):

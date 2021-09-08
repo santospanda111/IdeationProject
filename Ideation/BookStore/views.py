@@ -4,13 +4,19 @@ from UserAuth.models import UserData
 from .models import Books,Cart,Order,OrderItems
 from .utils import verify_token
 from rest_framework.exceptions import ValidationError
-from django.db.models import Q
 from django.conf import settings
 from django.core.mail import send_mail
 from log import get_logger
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from django.db.models import Q
 
+#REDIS modules
+from django.core.cache.backends.base import DEFAULT_TIMEOUT
+from django.views.decorators.cache import cache_page
+from django.core.cache import cache
+
+CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
 # Logger configuration
 logger = get_logger()
 
@@ -60,12 +66,18 @@ class GetBooks(APIView):
 
     def get(self,request):
         """
-        This method queries all the book details in Books database
+        This method queries all the book details in Books database.
+        -Here i have implemented Redis get RAM Cache.
         :return: book details in database.
         """
         try:
             data = Books.objects.all()
+            if cache.get(data):
+                serializer = BookSerializer(data, many=True)
+                return Response({'Data':serializer.data},status=status.HTTP_200_OK)
+
             serializer = BookSerializer(data, many=True)
+            cache.set(data, serializer)
             return Response({'Data':serializer.data},status=status.HTTP_200_OK)
         except ValidationError as e:
             logger.exception(e)
@@ -164,12 +176,17 @@ class SearchBook(APIView):
     def get(self, request):
         """
         This method requires data to search book from book store.
+        -Here i have implemented redis to get RAM Cache.
         :param : title or author or id
         :return: book data according to the title or author or id.
         """
         try:
             book = Books.objects.filter(Q(title=request.data['keyword']) | Q(author=request.data['keyword'])).all()
+            if cache.get(book):
+                serializer = BookSerializer(book, many=True)
+                return Response({"data": serializer.data}, status= status.HTTP_200_OK)
             serializer = BookSerializer(book, many=True)
+            cache.set(book, serializer)
             return Response({"data": serializer.data}, status= status.HTTP_200_OK)
         except ValueError as e:
             logger.exception(e)
